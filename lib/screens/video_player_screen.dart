@@ -71,7 +71,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
               ],
             )
-                : const CircularProgressIndicator(color: Colors.white),
+                : Center(child: const CircularProgressIndicator(color: Colors.white)),
           ),
 
           Positioned(
