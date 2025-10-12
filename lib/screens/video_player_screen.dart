@@ -47,32 +47,48 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text("Video Preview"), backgroundColor: Colors.black),
-      body: Center(
-        child: _controller.value.isInitialized
-            ? Stack(
-          alignment: Alignment.center,
-          children: [
-            AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: VideoPlayer(_controller),
-            ),
-            GestureDetector(
-              onTap: _togglePlayPause,
-              child: Icon(
-                _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                color: Colors.white70,
-                size: 80,
-              ),
-            ),
-          ],
-        )
-            : const CircularProgressIndicator(color: Colors.white),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _togglePlayPause,
-        child: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-      ),
+      body: Stack(
+        children: [
+
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: _controller.value.isInitialized
+                ? Stack(
+              alignment: Alignment.center,
+              children: [
+                AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                ),
+                GestureDetector(
+                  onTap: _togglePlayPause,
+                  child: Icon(
+                    _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                    color: Colors.white70,
+                    size: 80,
+                  ),
+                ),
+              ],
+            )
+                : const CircularProgressIndicator(color: Colors.white),
+          ),
+
+          Positioned(
+            top: 36,
+            left: 8,
+            child: IconButton(
+                onPressed: (){
+                  Navigator.pop(context);
+                },
+                style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withValues(alpha: 0.5),
+                    foregroundColor: Colors.white
+                ),
+                icon: Icon(Icons.arrow_back)),
+          ),
+        ],
+      )
     );
   }
 }
