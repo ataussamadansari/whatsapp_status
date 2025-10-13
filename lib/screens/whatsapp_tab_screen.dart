@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:whatsapp_status_downloader/screens/saved_screen.dart';
 import '../utils/file_helper.dart';
 import '../utils/permission_helper.dart';
 import '../widgets/status_item.dart';
@@ -167,7 +166,7 @@ class WhatsAppTabScreenState extends State<WhatsAppTabScreen>
     }
 
     // Wrap GridView with RefreshIndicator
-    Widget _buildRefreshableGrid(List<FileSystemEntity> files, String emptyMessage) 
+    /*Widget _buildRefreshableGrid(List<FileSystemEntity> files, String emptyMessage)
     {
         return RefreshIndicator(
             onRefresh: () => refresh(withDelay: true), // drag down triggers refresh with 3s delay
@@ -206,6 +205,47 @@ class WhatsAppTabScreenState extends State<WhatsAppTabScreen>
                     )
                 )
         );
+    }*/
+
+    Widget _buildRefreshableGrid(List<FileSystemEntity> files, String emptyMessage) {
+        return RefreshIndicator(
+            onRefresh: () => refresh(withDelay: true),
+            child: files.isEmpty
+                ? ListView(
+                children: [
+                    SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: EmptyView(
+                            message: widget.type == WhatsAppType.whatsapp
+                                ? "WhatsApp not installed or $emptyMessage"
+                                : "WhatsApp Business not installed or $emptyMessage",
+                            icon: emptyMessage.contains("images")
+                                ? Icons.photo_library
+                                : Icons.video_library,
+                            onRefresh: () => refresh(withDelay: true),
+                        ),
+                    ),
+                ],
+            )
+                : GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.6,
+                ),
+                itemCount: files.length,
+                itemBuilder: (context, i) => StatusItem(
+                    file: files[i],
+                    onSaved: () {
+                        widget.onStatusDownloaded?.call();
+                    },
+                    allImages: emptyMessage.contains("images") ? files : null,
+                    allVideos: emptyMessage.contains("videos") ? files : null,
+                ),
+            ),
+        );
     }
 }
 
@@ -226,236 +266,3 @@ Future<int> _getAndroidSdkInt() async
     return 0;
 }
 
-/*
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import '../utils/file_helper.dart';
-import '../utils/permission_helper.dart';
-import '../widgets/status_item.dart';
-import '../widgets/empty_view.dart';
-import 'home_screen.dart';
-
-class WhatsAppTabScreen extends StatefulWidget
-{
-    final WhatsAppType type;
-    const WhatsAppTabScreen({super.key, required this.type});
-
-    @override
-    State<WhatsAppTabScreen> createState() => WhatsAppTabScreenState();
-}
-
-class WhatsAppTabScreenState extends State<WhatsAppTabScreen>
-    with SingleTickerProviderStateMixin
-{
-    List<FileSystemEntity> _images = [];
-    List<FileSystemEntity> _videos = [];
-    bool _loading = true;
-    late TabController _tabController;
-
-    @override
-    void initState() 
-    {
-        super.initState();
-        _tabController = TabController(length: 2, vsync: this);
-        // refresh();
-        // Only call refresh(), which handles permissions
-        WidgetsBinding.instance.addPostFrameCallback((_)
-            {
-                refresh();
-            }
-        );
-    }
-
-    @override
-    void dispose() 
-    {
-        _tabController.dispose();
-        super.dispose();
-    }
-
-    // ✅ Public refresh function (called from HomeScreen)
-    Future<void> refresh() async
-    {
-
-        final sdk = await _getAndroidSdkInt();
-
-        setState(() => _loading = true);
-
-        bool granted = await PermissionHelper.requestStoragePermission();
-        if (!granted) 
-        {
-     */
-/* ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Storage permission is required")),
-      );*//*
-
-
-            if (await Permission.storage.isDenied && sdk < 33) 
-            {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Storage permission is required"))
-                );
-            }
-            else if (await Permission.manageExternalStorage.isDenied) 
-            {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("External Storage permission is required"))
-                );
-            }
-            else if (await Permission.photos.isDenied && sdk >= 33) 
-            {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Photos and media permission is required"))
-                );
-            }
-            setState(() => _loading = false);
-            return;
-        }
-
-        // Check WhatsApp folder
-        final whatsappDir = Directory(FileHelper.whatsappPath);
-        final wbDir = Directory(FileHelper.whatsappBusinessPath);
-
-        _images = [];
-        _videos = [];
-
-        if (widget.type == WhatsAppType.whatsapp && !await whatsappDir.exists()) 
-        {
-            _images = []; // no files
-            _videos = [];
-            _loading = false;
-            return; // WhatsApp not installed
-        }
-
-        if (widget.type == WhatsAppType.whatsappBusiness && !await wbDir.exists()) 
-        {
-            _images = [];
-            _videos = [];
-            _loading = false;
-            return; // WhatsApp Business not installed
-        }
-
-        final path = widget.type == WhatsAppType.whatsapp
-            ? FileHelper.whatsappPath
-            : FileHelper.whatsappBusinessPath;
-
-        final dir = Directory(path);
-        if (await dir.exists()) 
-        {
-            final allFiles = await dir
-                .list()
-                .where((e) =>
-                    e.path.endsWith('.jpg') ||
-                        e.path.endsWith('.png') ||
-                        e.path.endsWith('.mp4'))
-                .toList();
-
-            allFiles.sort((a, b) =>
-                b.statSync().modified.compareTo(a.statSync().modified));
-
-            _images = allFiles
-                .where((f) => f.path.endsWith('.jpg') || f.path.endsWith('.png'))
-                .toList();
-
-            _videos =
-            allFiles.where((f) => f.path.endsWith('.mp4')).toList();
-        }
-        setState(() => _loading = false);
-    }
-
-    @override
-    Widget build(BuildContext context) 
-    {
-        return Column(
-            children: [
-                // ✅ Tab bar
-                Container(
-                    color: Colors.green.shade600,
-                    child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: Colors.white,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white70,
-                        tabs: const[
-                            Tab(icon: Icon(Icons.photo), text: 'Images'),
-                            Tab(icon: Icon(Icons.videocam), text: 'Videos')
-                        ]
-                    )
-                ),
-
-                // ✅ Tab content
-                Expanded(
-                    child: _loading
-                        ? const Center(child: CircularProgressIndicator())
-                        : TabBarView(
-                            controller: _tabController,
-                            children: [
-                                _buildGrid(_images, "No images found."),
-                                _buildGrid(_videos, "No videos found.")
-                            ]
-                        )
-                )
-            ]
-        );
-    }
-
-    Widget _buildGrid(List<FileSystemEntity> files, String emptyMessage) 
-    {
-    */
-/*if (files.isEmpty) {
-      return EmptyView(
-        message: emptyMessage,
-        icon: emptyMessage.contains("images")
-            ? Icons.photo_library
-            : Icons.video_library,
-        onRefresh: refresh,
-      );
-    }*//*
-
-
-        if (files.isEmpty) 
-        {
-            return EmptyView(
-                message: widget.type == WhatsAppType.whatsapp
-                    ? "WhatsApp is not installed or $emptyMessage" // no statuses found."
-                    : "WhatsApp Business is not installed or $emptyMessage", // no statuses found.",
-                icon: emptyMessage.contains("images")
-                    ? Icons.photo_library
-                    : Icons.video_library,
-                onRefresh: refresh
-            );
-        }
-
-        return GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.7
-            ),
-            itemCount: files.length,
-            itemBuilder: (context, i) => StatusItem(file: files[i])
-        );
-    }
-}
-
-Future<int> _getAndroidSdkInt() async
-{
-    try
-    {
-        if (Platform.isAndroid) 
-        {
-            AndroidDeviceInfo info = await DeviceInfoPlugin()
-                .androidInfo;
-            return info.version.sdkInt;
-        }
-    }
-    catch (_)
-    {
-    }
-    return 0;
-}
-*/
