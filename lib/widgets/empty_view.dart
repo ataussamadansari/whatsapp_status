@@ -37,7 +37,7 @@ class EmptyView extends StatelessWidget {
             const SizedBox(height: 28),
 
             // Modern refresh button
-            ElevatedButton.icon(
+            /*ElevatedButton.icon(
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh, color: Colors.white),
               label: const Text('Try Again'),
@@ -54,7 +54,7 @@ class EmptyView extends StatelessWidget {
                 ),
                 textStyle: const TextStyle(fontSize: 16),
               ),
-            ),
+            ),*/
           ],
         ),
       ),
