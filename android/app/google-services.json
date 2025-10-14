@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "287591848973",
+    "project_id": "status-saver-2e598",
+    "storage_bucket": "status-saver-2e598.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287591848973:android:f915b052498f230aba8944",
+        "android_client_info": {
+          "package_name": "com.smdtech.statussaver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsct8_ppZdBcjQX3uO5OmsW8hYD9fqBFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

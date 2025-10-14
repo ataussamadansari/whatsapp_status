@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_downloader
+package com.smdtech.statussaver
 
 import io.flutter.embedding.android.FlutterActivity
 
