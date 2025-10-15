@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-
 import 'native_ad_manager.dart';
 
 class NativeAdWidget extends StatefulWidget {
   final NativeAdManager nativeAdManager;
-  final double? height;
+  final double height;
 
   const NativeAdWidget({
     super.key,
@@ -18,15 +17,21 @@ class NativeAdWidget extends StatefulWidget {
 }
 
 class _NativeAdWidgetState extends State<NativeAdWidget> {
-  NativeAd? _nativeAd;
-  bool _isAdLoaded = false;
+  NativeAd? _ad;
+  bool _isLoaded = false;
   bool _hasError = false;
-  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _loadNativeAd();
+
+    // Agar ad pehle se load hai, use kar lo
+    if (widget.nativeAdManager.nativeAd != null) {
+      _ad = widget.nativeAdManager.nativeAd;
+      _isLoaded = true;
+    } else {
+      _loadNativeAd();
+    }
   }
 
   void _loadNativeAd() {
@@ -34,8 +39,8 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       onAdLoaded: (ad) {
         if (mounted) {
           setState(() {
-            _nativeAd = ad;
-            _isAdLoaded = true;
+            _ad = ad;
+            _isLoaded = true;
             _hasError = false;
           });
         }
@@ -44,133 +49,39 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
         if (mounted) {
           setState(() {
             _hasError = true;
-            _errorMessage = error;
-            _isAdLoaded = false;
+            _isLoaded = false;
           });
         }
       },
     );
   }
 
-  void _retryAd() {
-    if (mounted) {
-      setState(() {
-        _hasError = false;
-        _errorMessage = '';
-      });
-      widget.nativeAdManager.resetRetries();
-      _loadNativeAd();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Agar error hai aur max retries ho gayi hain
-    if (_hasError && widget.nativeAdManager.hasMaxRetries) {
-      return Container(
+    if (_hasError) {
+      return SizedBox(
         height: widget.height,
-        margin: EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, color: Colors.orange, size: 32),
-              SizedBox(height: 8),
-              Text(
-                'Ad Not Available',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Try again later',
-                style: TextStyle(color: Colors.grey, fontSize: 10),
-              ),
-            ],
-          ),
-        ),
+        child: Center(child: Text('Ad not available')),
       );
     }
 
-    // Agar loading ho raha hai ya error hai
-    if (!_isAdLoaded || _hasError) {
-      return Container(
+    if (!_isLoaded || _ad == null) {
+      return SizedBox(
         height: widget.height,
-        margin: EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_hasError) ...[
-                Icon(Icons.warning_amber, color: Colors.orange, size: 24),
-                SizedBox(height: 6),
-                Text(
-                  'Retrying...',
-                  style: TextStyle(color: Colors.orange, fontSize: 10),
-                ),
-              ] else ...[
-                CircularProgressIndicator(
-                  color: Colors.green,
-                  strokeWidth: 2,
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Loading Ad...',
-                  style: TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ],
-              SizedBox(height: 4),
-              if (_hasError)
-                TextButton(
-                  onPressed: _retryAd,
-                  child: Text(
-                    'Retry',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    minimumSize: Size.zero,
-                  ),
-                ),
-            ],
-          ),
-        ),
+        child: Center(child: Text('Loading Ad...')),
       );
     }
 
-    // Agar ad loaded hai
     return Container(
       height: widget.height,
-      margin: EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: AdWidget(ad: _nativeAd!),
-      ),
+      margin: const EdgeInsets.all(4),
+      child: AdWidget(ad: _ad!),
     );
   }
 
   @override
   void dispose() {
-    _nativeAd?.dispose();
+    // Yahan dispose mat karo, ad Manager me dispose hoga globally
     super.dispose();
   }
 }
